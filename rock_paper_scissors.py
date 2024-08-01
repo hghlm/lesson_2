@@ -3,46 +3,66 @@ import random
 VALID_CHOICES = ["rock", "paper", "scissors", "lizard", "spock"]
 VALID_CHOICES_SHORT = ["r", "p", "sc", "l", "sp"]
 
+WINNING_COMBOS = { "rock": ["scissors", "lizard"],
+                   "paper": ["rock", "spock"],
+                   "scissors": ["paper", "lizard"],
+                   "lizard": ["spock", "paper"],
+                   "spock": ["rock", "scissors"]}
+
+SEPARATOR = '---------------------------------------------------------------'
+
 # Print a formatted message.
 def prompt(message):
     print(f"==> {message}")
 
 # Takes choices for player and cpu and returns winner.
 def determine_winner(player, cpu):
-    if ((player == "rock" and (cpu == "scissors" or cpu == "lizard")) or
-        (player == "paper" and (cpu == "rock" or cpu == "spock")) or
-        (player == "scissors" and (cpu == "paper" or cpu == "lizard")) or
-        (player == "lizard" and (cpu == "spock" or cpu == "paper")) or 
-        (player == "spock" and (cpu == "rock" or cpu == "scissors"))):
-        return 'player'
-    elif ((player == "rock" and cpu == "rock") or
-        (player == "paper" and cpu == "paper") or
-        (player == "scissors" and cpu == "scissors") or
-        (player == "lizard" and cpu == "lizard") or 
-        (player == "spock" and cpu == "spock")):
+    if player == cpu:
         return 'tie'
-    else:
-        return 'cpu'
+
+    if cpu in WINNING_COMBOS[player]:
+        return 'player'
+
+    return 'cpu'
 
 # Displays choices for player and computer and prints who wins.
 def display_winner(player, cpu, winner):
+    print()
     prompt(f"You chose {player}, computer chose {cpu}.")
 
     if winner == 'player':
-        prompt("You win!")
+        prompt(f"You win!\n{SEPARATOR}")
     elif winner == 'cpu':
-        prompt("Computer wins!")
+        prompt(f"Computer wins!\n{SEPARATOR}")
     else:
-        prompt("It's a tie!")
+        prompt(f"It's a tie!\n{SEPARATOR}")
 
-# Increments the score of the winner by 1.        
-def increment_score(winner):
-    if winner == 'player':
-        global player_score 
-        player_score += 1
-    elif winner == 'cpu':
-        global cpu_score
-        cpu_score += 1
+# Displays welcome message.
+def welcome_message():
+    prompt("Let's play rock, paper, scissors, lizard, spock!")
+    prompt("Best out of five!")
+    print(SEPARATOR)
+
+# Displays ending message.
+def ending_message():
+    prompt(f'The score is {score["player_score"]}:{score["cpu_score"]}.')
+
+    if score["player_score"] > score["cpu_score"]:
+        prompt('You won the match!\n')
+    else:
+        prompt('The computer won the match!\n')
+
+# Ask for player choice input and returns it normalized.
+def get_player_choice():
+    prompt(f'Choose one: {", ".join(VALID_CHOICES)},')
+    print(f'    or {", ".join (VALID_CHOICES_SHORT)} for short.')
+    choice = input('--> ').strip().lower()
+
+    while choice not in VALID_CHOICES and choice not in VALID_CHOICES_SHORT:
+        prompt("That's not a valid choice")
+        choice = input('--> ').strip().lower()
+
+    return normalize_choice(choice)
 
 # Takes short valid choice or valid choice input and returns valid choice.
 def normalize_choice(choice):
@@ -51,64 +71,47 @@ def normalize_choice(choice):
         choice = VALID_CHOICES[index]
     return choice
 
-def welcome_message():
-    prompt("Let's play rock, paper, scissors, lizard, spock!")
-    prompt("Best out of five!\n")
-
-# Displays best of three winner.
-def ending_message():
-    if player_score > cpu_score:
-        prompt('You win!')
-    else:
-        prompt('Computer wins!')
-        
-# Ask for player choice input and returns it normalized.        
-def get_player_choice():
-    prompt(f'Choose one: {", ".join(VALID_CHOICES)},')
-    print(f'    or {", ".join (VALID_CHOICES_SHORT)} for short.')
-    choice = input().strip().lower()
-
-    while choice not in VALID_CHOICES and choice not in VALID_CHOICES_SHORT:
-        prompt("That's not a valid choice")
-        choice = input().strip().lower()
-    
-    return normalize_choice(choice)
-
+# Asks user to play again and returns their choice.
 def play_again():
     while True:
-            prompt("Do you want to play again (y/n)?")
-            answer = input().strip().lower()
-    
-            if answer in ['y', 'n']:
-                break
-        
+        prompt("Do you want to play again (y/n)?")
+        answer = input('--> ').strip().lower()
+
+        if answer in ['y', 'n']:
+            break
+
     if answer[0] == 'y':
         prompt("Let's play again!\n")
+        print(SEPARATOR)
         return True
-    else:
-        prompt("Thanks for playing!")
-        return False
+
+    prompt("Thanks for playing!")
+    return False
 
 # Main program.
-player_score = 0
-cpu_score = 0
-rematch = True
+score = {"player_score": 0,
+         "cpu_score": 0}
 
 welcome_message()
 
-while rematch:
+while True:
+    prompt(f'The score is {score["player_score"]}:{score["cpu_score"]}.\n')
+
     player_choice = get_player_choice()
     cpu_choice = random.choice(VALID_CHOICES)
 
-    winner = determine_winner(player_choice, cpu_choice)
-    increment_score(winner)
-    display_winner(player_choice, cpu_choice, winner)
-    
-    prompt(f'The score is {player_score}:{cpu_score}.\n')
+    victor = determine_winner(player_choice, cpu_choice)
+    display_winner(player_choice, cpu_choice, victor)
 
-    if player_score == 3 or cpu_score == 3:
+    if victor == 'player':
+        score['player_score'] += 1
+    elif victor == 'cpu':
+        score['cpu_score'] += 1
+
+    if score['player_score'] == 3 or score['cpu_score'] == 3:
         ending_message()
-        player_score = 0
-        cpu_score = 0
-        
-        rematch = play_again()
+        score['player_score'] = 0
+        score['cpu_score'] = 0
+
+        if not play_again():
+            break
